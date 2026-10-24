@@ -1,0 +1,18 @@
+[project]
+name = "devops-audit-agent"
+version = "0.1.0"
+description = "LLM-driven agent that audits GitHub repositories for DevOps best-practice violations"
+requires-python = ">=3.11"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
