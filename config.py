@@ -26,7 +26,8 @@ class Settings:
     reasoning_effort: str | None = None
 
 
-def _read_number(variable_name: str, default_value: float) -> float:
+def read_number_setting(variable_name: str, default_value: float) -> float:
+    """Read a numeric environment variable, or return the default when it is unset."""
     raw_value = os.environ.get(variable_name, "").strip()
     if raw_value == "":
         return default_value
@@ -57,9 +58,9 @@ def load_settings(env_file: str | None = ".env") -> Settings:
         api_key=api_key,
         base_url=os.environ.get("LLM_BASE_URL", "").strip() or DEFAULT_BASE_URL,
         model=os.environ.get("LLM_MODEL", "").strip() or DEFAULT_MODEL,
-        request_timeout_seconds=_read_number(
+        request_timeout_seconds=read_number_setting(
             "LLM_REQUEST_TIMEOUT_SECONDS", DEFAULT_REQUEST_TIMEOUT_SECONDS
         ),
-        max_retries=int(_read_number("LLM_MAX_RETRIES", DEFAULT_MAX_RETRIES)),
+        max_retries=int(read_number_setting("LLM_MAX_RETRIES", DEFAULT_MAX_RETRIES)),
         reasoning_effort=reasoning_effort,
     )

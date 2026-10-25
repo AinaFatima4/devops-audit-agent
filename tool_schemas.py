@@ -62,8 +62,9 @@ READ_FILE_SCHEMA = _function_schema(
 SEARCH_CODE_SCHEMA = _function_schema(
     name="search_code",
     description=(
-        "Search tracked text files with a Python regular expression. Returns file:line: snippet. "
-        "Use it to find suspicious patterns or to confirm that an alternative tool is configured."
+        "Search the CONTENTS of tracked text files with a Python regular expression. Returns "
+        "file:line: snippet. It does not match file names: use list_files to check whether a "
+        "file exists. Use it to find suspicious patterns or confirm an alternative is configured."
     ),
     properties={
         "pattern": {"type": "string", "description": "Python regular expression."},

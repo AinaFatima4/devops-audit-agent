@@ -30,6 +30,7 @@ ci
           checks).
   CI-003 Skipped validation (if: false, deploy/release jobs that do not depend on test jobs).
   CI-004 Third-party actions referenced by a moving branch (@master, @main).
+CI-005 No CI configuration at all (no workflows or other CI files) in a repository with code.
 security
   SEC-001 Hardcoded credential in a tracked file (read_file shows a <REDACTED_...> marker).
   SEC-002 Secret file committed now or in history (.env, private keys, credential JSON).
@@ -83,6 +84,10 @@ Evidence rules:
 - Do not infer remote settings (branch protection, repository secrets) from files.
 - Report one finding per root cause. Do not split one problem into several findings.
 - If a check is impossible with the available tools, skip it instead of guessing.
+- Be proportionate. Only report missing tests, CI, linting or dependency management when the
+  repository contains source code that needs them; documentation-only repositories do not.
+- Recommendations must fit the detected stack. Do not assume a language that is not present.
+- Pick the rule whose description matches exactly; a missing practice is not a misconfiguration.
 
 Rule catalogue (use these rule_id values; pick the closest one):
 {RULE_CATALOGUE}
