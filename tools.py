@@ -1,3 +1,5 @@
+"""Read-only inspection tools that operate on a local clone of the target repository."""
+
 import fnmatch
 import os
 import re
@@ -119,6 +121,8 @@ def clone_repository(repository_url: str, workspace_directory: Path) -> Path:
     if completed_process.returncode != 0:
         remove_directory(clone_directory)
         error_message = completed_process.stderr.strip() or "unknown git error"
+        if "could not read Username" in error_message or "not found" in error_message.lower():
+            error_message = "repository not found or not public"
         raise ToolError(f"Could not clone {normalized_url}: {error_message}")
     return clone_directory
 

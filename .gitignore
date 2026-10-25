@@ -6,3 +6,5 @@ __pycache__/
 .env
 report.json
 .audit_workspace/
+report.trace.json
+report.partial.json
