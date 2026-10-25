@@ -49,6 +49,20 @@ def normalize_github_url(repository_url: str) -> str:
     return f"https://github.com/{owner}/{repository}"
 
 
+def matches_glob(file_path: str, file_glob: str) -> bool:
+    """Match a path against a glob; '**/' also matches files at the repository root."""
+    normalized_glob = file_glob.strip().replace("\\", "/")
+    candidate_globs = [normalized_glob]
+    while normalized_glob.startswith("**/"):
+        normalized_glob = normalized_glob[3:]
+        candidate_globs.append(normalized_glob)
+    file_name = PurePosixPath(file_path).name
+    for candidate_glob in candidate_globs:
+        if fnmatch.fnmatch(file_path, candidate_glob) or fnmatch.fnmatch(file_name, candidate_glob):
+            return True
+    return False
+
+
 def truncate_output(text: str, limit: int = MAX_OUTPUT_CHARACTERS) -> str:
     """Cut long tool output so it fits in the LLM context, and say that it was cut."""
     if len(text) <= limit:
@@ -251,10 +265,7 @@ class RepositoryTools:
             ) from regex_error
         results = []
         for file_path in self._tracked_files():
-            if file_glob and not (
-                fnmatch.fnmatch(file_path, file_glob)
-                or fnmatch.fnmatch(PurePosixPath(file_path).name, file_glob)
-            ):
+            if file_glob and not matches_glob(file_path, file_glob):
                 continue
             absolute_path = self.repository_root / file_path
             if not absolute_path.is_file() or absolute_path.stat().st_size > MAX_FILE_BYTES:

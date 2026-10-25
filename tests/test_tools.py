@@ -11,11 +11,13 @@ from tools import (
     RepositoryTools,
     ToolError,
     clone_repository,
+    matches_glob,
     normalize_github_url,
     remove_directory,
 )
 
 GIT_EXECUTABLE = shutil.which("git")
+
 
 @pytest.mark.parametrize(
     ("input_url", "expected_url"),
@@ -175,3 +177,19 @@ def test_clone_repository_clones_public_repository(tmp_path: Path) -> None:
         assert (clone_directory / "README").is_file()
     finally:
         remove_directory(clone_directory)
+
+
+@pytest.mark.parametrize(
+    ("file_path", "file_glob", "expected"),
+    [
+        ("config.py", "**/*.py", True),
+        ("app/models.py", "**/*.py", True),
+        ("app/models.py", "*.py", True),
+        (".github/workflows/ci.yml", ".github/workflows/*", True),
+        ("README.md", "*.py", False),
+    ],
+)
+def test_matches_glob_handles_root_and_nested_files(
+    file_path: str, file_glob: str, expected: bool
+) -> None:
+    assert matches_glob(file_path, file_glob) is expected

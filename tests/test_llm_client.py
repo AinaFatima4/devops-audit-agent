@@ -1,7 +1,16 @@
+import httpx2
+import openai
 import pytest
 from openai.types.chat import ChatCompletion
 
-from llm_client import LLMError, parse_completion, parse_tool_arguments
+from config import Settings
+from llm_client import (
+    LLMError,
+    MalformedToolCallError,
+    OpenAICompatibleClient,
+    parse_completion,
+    parse_tool_arguments,
+)
 from tool_schemas import ALL_TOOL_SCHEMAS, REPORT_VIOLATION_SCHEMA, SEVERITIES
 
 
@@ -114,3 +123,19 @@ def test_tool_schemas_have_unique_names_and_required_fields() -> None:
 def test_report_violation_schema_restricts_severity() -> None:
     properties = REPORT_VIOLATION_SCHEMA["function"]["parameters"]["properties"]
     assert properties["severity"]["enum"] == SEVERITIES
+
+
+def test_groq_output_parse_failure_is_retryable(monkeypatch: pytest.MonkeyPatch) -> None:
+    client = OpenAICompatibleClient(Settings("key", "https://example.invalid/v1", "model", 5, 0))
+    request = httpx2.Request("POST", "https://example.invalid/v1/chat/completions")
+    response = httpx2.Response(400, request=request)
+    error = openai.BadRequestError(
+        "Error code: 400 - {'code': 'output_parse_failed'}", response=response, body=None
+    )
+
+    def raise_error(**keyword_arguments: object) -> None:
+        raise error
+
+    monkeypatch.setattr(client.client.chat.completions, "create", raise_error)
+    with pytest.raises(MalformedToolCallError):
+        client.chat([{"role": "user", "content": "hi"}], [])
