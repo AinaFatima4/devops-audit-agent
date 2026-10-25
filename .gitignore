@@ -8,3 +8,4 @@ report.json
 .audit_workspace/
 report.trace.json
 report.partial.json
+reports/

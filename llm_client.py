@@ -9,6 +9,13 @@ from openai import OpenAI
 
 from config import Settings
 
+MALFORMED_OUTPUT_MARKERS = (
+    "tool_use_failed",
+    "failed to call a function",
+    "output_parse_failed",
+    "failed_generation",
+)
+
 
 class LLMError(Exception):
     """Raised when the LLM provider cannot return a usable response."""
@@ -138,7 +145,7 @@ class OpenAICompatibleClient:
             raise LLMError("Could not connect to the LLM provider") from connection_error
         except openai.BadRequestError as bad_request_error:
             error_text = str(bad_request_error).lower()
-            if "tool_use_failed" in error_text or "failed to call a function" in error_text:
+            if any(marker in error_text for marker in MALFORMED_OUTPUT_MARKERS):
                 raise MalformedToolCallError(
                     "The model produced a malformed tool call"
                 ) from bad_request_error
