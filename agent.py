@@ -103,7 +103,7 @@ def write_json_atomically(output_path: Path, data: dict[str, Any]) -> None:
     )
     try:
         with os.fdopen(file_descriptor, "w", encoding="utf-8") as file_handle:
-            json.dump(data, file_handle, indent=2, ensure_ascii=False)
+            json.dump(data, file_handle, indent=2, ensure_ascii=True)
             file_handle.write("\n")
         os.replace(temporary_name, output_path)
     except BaseException:

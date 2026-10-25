@@ -1,0 +1,45 @@
+{
+  "repository": "https://github.com/miguelgrinberg/microblog",
+  "violations": [
+    {
+      "rule_id": "CI-005",
+      "category": "ci",
+      "severity": "high",
+      "file": null,
+      "line": null,
+      "description": "Repository contains code and tests but has no CI configuration.",
+      "evidence": "search_code found no files matching '.github/*' indicating absence of GitHub Actions workflows.",
+      "recommendation": "Add a CI workflow (e.g., GitHub Actions) that runs the test suite on pushes and pull requests."
+    },
+    {
+      "rule_id": "DEP-004",
+      "category": "dependency_management",
+      "severity": "medium",
+      "file": null,
+      "line": null,
+      "description": "Python project uses requirements.txt but no lockfile is committed.",
+      "evidence": "requirements.txt present but no Pipfile.lock, poetry.lock, or requirements.txt hash file found.",
+      "recommendation": "Commit a lockfile such as requirements.txt with hashes (pip freeze --require-hash) or use Poetry with poetry.lock to pin exact versions."
+    },
+    {
+      "rule_id": "CFG-001",
+      "category": "configuration",
+      "severity": "medium",
+      "file": null,
+      "line": null,
+      "description": "Repository contains absolute machine-specific paths in deployment configuration files.",
+      "evidence": "deployment/nginx/microblog lines reference '/home/ubuntu/microblog/...', and supervisor configs use '/home/ubuntu/microblog/...'.",
+      "recommendation": "Replace absolute paths with relative paths or environment variables, and document configuration steps."
+    },
+    {
+      "rule_id": "CQ-001",
+      "category": "code_quality",
+      "severity": "low",
+      "file": null,
+      "line": null,
+      "description": "Repository has no linter or formatter configuration.",
+      "evidence": "search_code did not find any linter configuration files such as .flake8, pyproject.toml with [tool.ruff], or similar.",
+      "recommendation": "Add a linter configuration (e.g., a .flake8 file or a pyproject.toml with [tool.ruff] settings) and integrate it into development and CI."
+    }
+  ]
+}

@@ -159,7 +159,8 @@ The run is unattended. Progress (`Step N: tool(arguments)`) is logged to stderr.
 }
 ```
 
-`sample_report.json` is a real report produced by this agent.
+`sample_report.json` is a real report produced by this agent (audit of
+`miguelgrinberg/microblog`), and `sample_report.trace.json` is the tool-call trace of that run.
 
 ### Exit codes
 
@@ -224,6 +225,8 @@ and pull request.
   evidence only.
 - Only the latest 200 commits are inspected.
 - Results depend on the model. Free-tier rate limits make audits slower (429 responses are retried
-  automatically).
+  automatically). On Groq's free tier, `openai/gpt-oss-120b` allows 200K tokens per day and one
+  audit uses roughly 50–120K, so only one or two audits fit per day. Use a paid tier or another
+  provider (see Configuration) to audit several repositories in a row.
 - Remote settings (branch protection, repository secrets) cannot be inspected from files and
   are not reported.
