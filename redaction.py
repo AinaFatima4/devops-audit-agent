@@ -1,5 +1,3 @@
-"""Masks secret values so they never reach logs, the LLM, or the final report."""
-
 import re
 
 PLACEHOLDER_PATTERN = re.compile(

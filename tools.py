@@ -1,5 +1,3 @@
-"""Read-only inspection tools that operate on a local clone of the target repository."""
-
 import fnmatch
 import os
 import re
