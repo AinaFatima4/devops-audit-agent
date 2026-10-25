@@ -120,3 +120,21 @@ def test_sorted_violations_orders_by_severity(ledger_with_app_file: EvidenceLedg
     recorder.record(build_arguments())
     severities = [violation.severity for violation in recorder.sorted_violations()]
     assert severities == ["critical", "low"]
+
+
+def test_same_rule_and_file_with_and_without_line_is_duplicate(
+    ledger_with_app_file: EvidenceLedger,
+) -> None:
+    recorder = FindingsRecorder(ledger_with_app_file)
+    recorder.record(build_arguments(line=None))
+    message = recorder.record(build_arguments(line=3, description="Another wording"))
+    assert message.startswith("Duplicate")
+
+
+def test_same_rule_on_different_lines_is_not_duplicate(
+    ledger_with_app_file: EvidenceLedger,
+) -> None:
+    recorder = FindingsRecorder(ledger_with_app_file)
+    recorder.record(build_arguments(line=3))
+    message = recorder.record(build_arguments(line=5, description="Second credential"))
+    assert message.startswith("Recorded")

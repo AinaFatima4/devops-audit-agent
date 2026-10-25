@@ -6,7 +6,8 @@ repository_hygiene
   HYG-002 .gitignore missing, or missing entries for the detected stack (e.g. venv, __pycache__,
           node_modules), or not ignoring secret files the code loads (e.g. .env).
   HYG-003 Generated/temporary files tracked (*.pyc, __pycache__/, node_modules/, dist/, build/,
-          *.log, .DS_Store, virtualenvs, coverage output).
+          *.log, .DS_Store, virtualenvs, coverage output). Only when list_files shows such a file;
+          put that file in 'file'. A missing .gitignore entry alone is HYG-002, not HYG-003.
 dependency_management
   DEP-001 Code imports third-party packages but no dependency manifest declares them.
   DEP-002 Application dependencies unpinned or with weak constraints (bare names, '*', 'latest',
@@ -75,7 +76,8 @@ How to work:
    generated files were ever committed. Choose each next step from what you have observed.
 3. Save steps: when several reads or searches are independent, request them together in one turn.
 4. Before reporting a missing practice, search for equivalent alternatives. Examples: tests run by
-   tox/nox/Makefile called from CI; linting configured in pyproject.toml, setup.cfg or pre-commit;
+   tox/nox/Makefile called from CI; linting configured in pyproject.toml, setup.cfg or
+   .pre-commit-config.yaml, or run by a separate workflow (read every workflow file first);
    pinned versions in a lockfile instead of the manifest; README.rst instead of README.md.
    An absent optional file is not a defect when an equivalent exists.
 5. As soon as evidence confirms a violation, call report_violation once. Quote only what you saw

@@ -151,7 +151,6 @@ class FindingsRecorder:
     def __init__(self, evidence_ledger: EvidenceLedger) -> None:
         self.evidence_ledger = evidence_ledger
         self.violations: list[Violation] = []
-        self._seen_keys: dict[tuple[str, str | None, int | None], int] = {}
 
     def build_violation(self, arguments: dict[str, Any]) -> Violation:
         rule_id = str(arguments.get("rule_id", "")).strip().upper()
@@ -193,19 +192,33 @@ class FindingsRecorder:
             recommendation=_clean_text_field(arguments, "recommendation"),
         )
 
+    def find_duplicate(self, new_violation: Violation) -> int | None:
+        """Same rule on the same file (unless both name different lines), or same description."""
+        new_description = new_violation.description.lower()
+        for finding_number, existing in enumerate(self.violations, start=1):
+            if existing.rule_id != new_violation.rule_id:
+                continue
+            if existing.description.lower() == new_description:
+                return finding_number
+            if existing.file != new_violation.file:
+                continue
+            if existing.line is None or new_violation.line is None:
+                return finding_number
+            if existing.line == new_violation.line:
+                return finding_number
+        return None
+
     def record(self, arguments: dict[str, Any]) -> str:
         """Validate and store one violation; return a message for the LLM either way."""
         try:
             violation = self.build_violation(arguments)
         except InvalidViolationError as validation_error:
             return f"ERROR: violation not recorded. {validation_error}"
-        duplicate_key = (violation.rule_id, violation.file, violation.line)
-        if duplicate_key in self._seen_keys:
-            existing_number = self._seen_keys[duplicate_key]
+        existing_number = self.find_duplicate(violation)
+        if existing_number is not None:
             return f"Duplicate of finding #{existing_number}; not recorded."
         self.violations.append(violation)
         finding_number = len(self.violations)
-        self._seen_keys[duplicate_key] = finding_number
         location = violation.file or "repository"
         if violation.line is not None:
             location += f":{violation.line}"
