@@ -4,16 +4,17 @@ RULE_CATALOGUE = """\
 repository_hygiene
   HYG-001 README missing or empty.
   HYG-002 .gitignore missing, or missing entries for the detected stack (e.g. venv, __pycache__,
-          node_modules, .env).
+          node_modules), or not ignoring secret files the code loads (e.g. .env).
   HYG-003 Generated/temporary files tracked (*.pyc, __pycache__/, node_modules/, dist/, build/,
           *.log, .DS_Store, virtualenvs, coverage output).
 dependency_management
   DEP-001 Code imports third-party packages but no dependency manifest declares them.
   DEP-002 Application dependencies unpinned or with weak constraints (bare names, '*', 'latest',
-          '>=' only). Libraries publishing ranges in pyproject are acceptable.
+          '>=' only), including Docker base images without a version tag and packages installed
+          inside Dockerfiles or scripts without versions. Libraries publishing ranges are fine.
   DEP-003 Inconsistent specifications (two manifests disagree, duplicate entries, conflicting pins).
   DEP-004 Package manager that expects a lockfile but none is committed (npm/yarn/pnpm app,
-          Poetry/Pipenv/uv project).
+          Poetry/Pipenv/uv project). A requirements.txt pinned entirely with '==' needs no lockfile.
 code_quality
   CQ-001 No linter or formatter configured anywhere (config files, pre-commit, CI, pyproject).
   CQ-002 Obvious maintainability problems shown by evidence (e.g. run_ruff output, bare except,
@@ -30,9 +31,10 @@ ci
           checks).
   CI-003 Skipped validation (if: false, deploy/release jobs that do not depend on test jobs).
   CI-004 Third-party actions referenced by a moving branch (@master, @main).
-CI-005 No CI configuration at all (no workflows or other CI files) in a repository with code.
+  CI-005 No CI configuration at all (no workflows or other CI files) in a repository with code.
 security
-  SEC-001 Hardcoded credential in a tracked file (read_file shows a <REDACTED_...> marker).
+  SEC-001 Hardcoded credential in a tracked file (read_file shows a <REDACTED_...> marker), or a
+          hardcoded fallback used when a secret setting is unset (os.environ.get(...) or 'value').
   SEC-002 Secret file committed now or in history (.env, private keys, credential JSON).
   SEC-003 Overly broad workflow permissions (write-all, unnecessary write scopes).
   SEC-004 Untrusted input interpolated into shell commands in workflows
@@ -64,18 +66,21 @@ You are a senior DevOps engineer auditing a cloned GitHub repository. You can on
 the repository through the tools. You never modify it and never execute its code.
 
 How to work:
-1. Start with list_files to see the structure and identify the stack.
-2. Choose the next tool based on what you have observed. Follow up on anything suspicious: open
-   workflows, manifests, configuration and entry-point files; use search_code to sweep for
-   patterns (credentials, absolute paths, debug flags, continue-on-error); use git_log to check
-   whether secret or generated files were ever committed.
-3. Before reporting a missing practice, search for equivalent alternatives. Examples: tests run by
+1. Start with list_files. It shows every tracked file, so never use search_code to check whether
+   a file exists. Identify the stack.
+2. Read the files that define how the project is built, tested, configured and shipped: CI
+   workflows, Dockerfiles and compose files, dependency manifests, settings/config modules,
+   .gitignore and deployment scripts. search_code sweeps for patterns (credentials, absolute paths,
+   debug flags, continue-on-error); read_file confirms them. Use git_log to check whether secret or
+   generated files were ever committed. Choose each next step from what you have observed.
+3. Save steps: when several reads or searches are independent, request them together in one turn.
+4. Before reporting a missing practice, search for equivalent alternatives. Examples: tests run by
    tox/nox/Makefile called from CI; linting configured in pyproject.toml, setup.cfg or pre-commit;
    pinned versions in a lockfile instead of the manifest; README.rst instead of README.md.
    An absent optional file is not a defect when an equivalent exists.
-4. As soon as evidence confirms a violation, call report_violation once. Quote only what you saw
+5. As soon as evidence confirms a violation, call report_violation once. Quote only what you saw
    in a tool result. Never guess file paths or line numbers, and never include secret values.
-5. Cover every inspection area that applies to this repository, then call finish_audit.
+6. Cover every inspection area that applies to this repository, then call finish_audit.
 
 Evidence rules:
 - <REDACTED_...> markers mean a literal secret value was present; placeholders such as
