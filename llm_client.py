@@ -14,6 +14,14 @@ class LLMError(Exception):
     """Raised when the LLM provider cannot return a usable response."""
 
 
+class ContextTooLargeError(LLMError):
+    """Raised when the request is larger than the model or rate limit allows."""
+
+
+class MalformedToolCallError(LLMError):
+    """Raised when the provider rejects a tool call the model generated."""
+
+
 @dataclass
 class ToolCall:
     call_id: str
@@ -56,9 +64,11 @@ def parse_completion(completion: Any) -> LLMResponse:
         raise LLMError("The model returned no choices")
     choice = completion.choices[0]
     message = choice.message
-    # Keep every field the provider sent (e.g. Gemini thought signatures) so it can be echoed back
-    assistant_message = message.model_dump(exclude_none=True)
-    assistant_message["role"] = "assistant"
+    # Keep tool calls as sent (e.g. Gemini thought signatures); drop hidden reasoning text
+    message_fields = message.model_dump(exclude_none=True)
+    assistant_message: dict[str, Any] = {"role": "assistant", "content": message.content or ""}
+    if message_fields.get("tool_calls"):
+        assistant_message["tool_calls"] = message_fields["tool_calls"]
     tool_calls = []
     for index, raw_tool_call in enumerate(message.tool_calls or []):
         arguments, arguments_error = parse_tool_arguments(raw_tool_call.function.arguments)
@@ -89,6 +99,7 @@ class OpenAICompatibleClient:
 
     def __init__(self, settings: Settings) -> None:
         self.model = settings.model
+        self.reasoning_effort = settings.reasoning_effort
         self.client = OpenAI(
             api_key=settings.api_key,
             base_url=settings.base_url,
@@ -97,6 +108,9 @@ class OpenAICompatibleClient:
         )
 
     def chat(self, messages: list[dict[str, Any]], tools: list[dict[str, Any]]) -> LLMResponse:
+        optional_arguments: dict[str, Any] = {}
+        if self.reasoning_effort is not None:
+            optional_arguments["reasoning_effort"] = self.reasoning_effort
         try:
             completion = self.client.chat.completions.create(
                 model=self.model,
@@ -104,6 +118,7 @@ class OpenAICompatibleClient:
                 tools=tools,
                 tool_choice="auto",
                 temperature=0.1,
+                **optional_arguments,
             )
         except openai.AuthenticationError as auth_error:
             raise LLMError(
@@ -121,7 +136,24 @@ class OpenAICompatibleClient:
             raise LLMError("The LLM request timed out after retries") from timeout_error
         except openai.APIConnectionError as connection_error:
             raise LLMError("Could not connect to the LLM provider") from connection_error
+        except openai.BadRequestError as bad_request_error:
+            error_text = str(bad_request_error).lower()
+            if "tool_use_failed" in error_text or "failed to call a function" in error_text:
+                raise MalformedToolCallError(
+                    "The model produced a malformed tool call"
+                ) from bad_request_error
+            if "context" in error_text or "too large" in error_text or "too long" in error_text:
+                raise ContextTooLargeError(
+                    "The request exceeds the model limit"
+                ) from bad_request_error
+            raise LLMError(f"The LLM provider rejected the request: {bad_request_error}") from (
+                bad_request_error
+            )
         except openai.APIStatusError as status_error:
+            if status_error.status_code == 413:
+                raise ContextTooLargeError(
+                    "The request exceeds the provider's size or tokens-per-minute limit"
+                ) from status_error
             raise LLMError(
                 f"LLM provider returned HTTP {status_error.status_code}"
             ) from status_error

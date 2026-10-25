@@ -9,6 +9,7 @@ DEFAULT_BASE_URL = "https://api.groq.com/openai/v1"
 DEFAULT_MODEL = "openai/gpt-oss-120b"
 DEFAULT_REQUEST_TIMEOUT_SECONDS = 120.0
 DEFAULT_MAX_RETRIES = 5
+ALLOWED_REASONING_EFFORTS = ("low", "medium", "high")
 
 
 class ConfigurationError(Exception):
@@ -22,6 +23,7 @@ class Settings:
     model: str
     request_timeout_seconds: float
     max_retries: int
+    reasoning_effort: str | None = None
 
 
 def _read_number(variable_name: str, default_value: float) -> float:
@@ -45,6 +47,12 @@ def load_settings(env_file: str | None = ".env") -> Settings:
         raise ConfigurationError(
             "LLM_API_KEY is not set. Copy .env.example to .env and add your API key."
         )
+    reasoning_effort = os.environ.get("LLM_REASONING_EFFORT", "").strip().lower() or None
+    if reasoning_effort is not None and reasoning_effort not in ALLOWED_REASONING_EFFORTS:
+        raise ConfigurationError(
+            f"LLM_REASONING_EFFORT must be one of {ALLOWED_REASONING_EFFORTS}, "
+            f"got {reasoning_effort!r}"
+        )
     return Settings(
         api_key=api_key,
         base_url=os.environ.get("LLM_BASE_URL", "").strip() or DEFAULT_BASE_URL,
@@ -53,4 +61,5 @@ def load_settings(env_file: str | None = ".env") -> Settings:
             "LLM_REQUEST_TIMEOUT_SECONDS", DEFAULT_REQUEST_TIMEOUT_SECONDS
         ),
         max_retries=int(_read_number("LLM_MAX_RETRIES", DEFAULT_MAX_RETRIES)),
+        reasoning_effort=reasoning_effort,
     )
