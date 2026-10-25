@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from dotenv import load_dotenv
 
 DEFAULT_BASE_URL = "https://api.groq.com/openai/v1"
-DEFAULT_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct"
+DEFAULT_MODEL = "openai/gpt-oss-120b"
 DEFAULT_REQUEST_TIMEOUT_SECONDS = 120.0
 DEFAULT_MAX_RETRIES = 5
 
